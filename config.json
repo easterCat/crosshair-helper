@@ -1,0 +1,14 @@
+{
+  "style": "dot",
+  "color": "#00ffff",
+  "size": 9,
+  "thickness": 2,
+  "opacity": 0.8,
+  "x": 0.5,
+  "y": 0.5,
+  "gap": 5,
+  "visible": true,
+  "hotkeyToggle": "F6",
+  "hotkeySwitch": "F7",
+  "name": "经典青色"
+}

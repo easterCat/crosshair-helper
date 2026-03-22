@@ -1,0 +1,2172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>屏幕准星助手 - 桌面版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, 'Helvetica Neue', sans-serif;
+            background: #f8fafc;
+            color: #1a202c;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .sidebar {
+            width: 360px;
+            background: #ffffff;
+            border-right: 1px solid #e2e8f0;
+            padding: 32px 24px;
+            overflow-y: auto;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.04);
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f7fafc;
+        }
+        
+        .preview-section {
+            flex: 1;
+            background: #1a202c;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            margin: 24px;
+            border-radius: 16px;
+            min-height: 320px;
+        }
+        
+        #previewCanvas {
+            border: 1px solid #2d3748;
+            border-radius: 8px;
+            background: #0d1117;
+        }
+        
+        .controls-section {
+            background: #ffffff;
+            margin: 0 24px 24px 0;
+            border-radius: 16px 16px 0 0;
+            padding: 24px;
+            max-height: 400px;
+            overflow-y: auto;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.04);
+        }
+        
+        h1 {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            color: #1a202c;
+            text-align: center;
+            letter-spacing: -0.5px;
+        }
+        
+        h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        h2::before {
+            content: '';
+            width: 4px;
+            height: 16px;
+            background: #3182ce;
+            border-radius: 2px;
+        }
+        
+        .control-group {
+            margin-bottom: 32px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #4a5568;
+            font-size: 13px;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+            margin-bottom: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3182ce;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3182ce;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+            transition: all 0.2s ease;
+            border: none;
+        }
+        
+        input[type="range"]:hover::-webkit-slider-thumb {
+            background: #2c5282;
+            transform: scale(1.1);
+        }
+        
+        input[type="range"]:hover::-moz-range-thumb {
+            background: #2c5282;
+            transform: scale(1.1);
+        }
+        
+        input[type="color"] {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        input[type="color"]:hover {
+            border-color: #3182ce;
+            transform: scale(1.05);
+        }
+        
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        input[type="text"]:focus, input[type="number"]:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            outline: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 44px;
+        }
+        
+        select:focus {
+            border-color: #3182ce;
+            box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+        }
+        
+        button {
+            background: #3182ce;
+            color: #ffffff;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            margin-right: 12px;
+            margin-bottom: 12px;
+            outline: none;
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+        }
+        
+        button:hover {
+            background: #2c5282;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(49, 130, 206, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+        }
+        
+        /* 预设按钮样式 */
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-buttons button {
+            background: #4299e1;
+            padding: 8px 16px;
+            font-size: 12px;
+            margin: 0;
+            min-width: 50px;
+        }
+        
+        .preset-buttons button:hover {
+            background: #3182ce;
+        }
+        
+        /* 微调按钮样式 */
+        .fine-tune {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+        }
+        
+        .fine-tune button {
+            background: #48bb78;
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 0;
+            min-width: 30px;
+        }
+        
+        .fine-tune button:hover {
+            background: #38a169;
+        }
+        
+        .fine-tune button:active {
+            transform: scale(0.95);
+        }
+        
+        button.secondary {
+            background: #38a169;
+            box-shadow: 0 2px 4px rgba(56, 161, 105, 0.2);
+        }
+        
+        button.secondary:hover {
+            background: #2f855a;
+            box-shadow: 0 4px 8px rgba(56, 161, 105, 0.3);
+        }
+        
+        button.danger {
+            background: #e53e3e;
+            box-shadow: 0 2px 4px rgba(229, 62, 62, 0.2);
+        }
+        
+        button.danger:hover {
+            background: #c53030;
+            box-shadow: 0 4px 8px rgba(229, 62, 62, 0.3);
+        }
+        
+        .preset-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+        }
+        
+        .preset-item:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+            transform: translateX(4px);
+        }
+        
+        .preset-item button {
+            margin: 0 0 0 8px;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+        
+        .value-display {
+            font-size: 12px;
+            color: #718096;
+            text-align: right;
+            font-weight: 500;
+        }
+        
+        .color-input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .position-inputs {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .position-inputs > div {
+            flex: 1;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 24px;
+        }
+        
+        .floating-crosshair {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9999;
+            background: transparent;
+        }
+        
+        .info-box {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            color: #4a5568;
+        }
+        
+        .info-box p {
+            color: #718096;
+            line-height: 1.5;
+        }
+        
+        .status-bar {
+            background: #ffffff;
+            padding: 16px 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-indicator.active {
+            background: #38a169;
+            box-shadow: 0 0 0 4px rgba(56, 161, 105, 0.3);
+        }
+        
+        .status-indicator.inactive {
+            background: #e53e3e;
+            box-shadow: 0 0 0 4px rgba(229, 62, 62, 0.3);
+        }
+        
+        .window-controls {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+        
+        .sidebar {
+            width: 520px;
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-right: 24px;
+            overflow-y: auto;
+            max-height: calc(100vh - 48px);
+        }
+        
+        .window-controls button {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            padding: 0;
+            margin: 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .minimize-btn {
+            background: #fbbf24;
+        }
+        
+        .maximize-btn {
+            background: #34d399;
+        }
+        
+        .close-btn {
+            background: #ef4444;
+        }
+        
+        .overlay-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            z-index: 9998;
+            pointer-events: none;
+        }
+        
+        .overlay-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: transparent;
+            z-index: 9998;
+            pointer-events: none;
+        }
+        
+        .overlay-mode.active {
+            pointer-events: all;
+        }
+        
+        /* 预设网格样式 */
+        .preset-filters {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .filter-group {
+            flex: 1;
+        }
+        
+        .filter-group label {
+            font-size: 12px;
+            margin-bottom: 6px;
+            color: #4a5568;
+        }
+        
+        .filter-group select {
+            font-size: 13px;
+            padding: 8px 12px;
+        }
+        
+        .preset-grid {
+            display: grid !important;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 16px;
+            background: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            /* 调试样式 */
+            min-height: 200px !important;
+            position: relative !important;
+            z-index: 1000 !important;
+        }
+        
+        .preset-item {
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 140px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .preset-item:hover {
+            border-color: #3182ce;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(49, 130, 206, 0.15);
+        }
+        
+        .preset-item.active {
+            border-color: #38a169;
+            background: #f0fff4;
+            box-shadow: 0 4px 12px rgba(56, 161, 105, 0.2);
+        }
+        
+        .preset-canvas {
+            width: 80px;
+            height: 80px;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            background: #1a202c;
+            margin-bottom: 8px;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+        
+        .preset-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #1a202c;
+            text-align: center;
+            margin-bottom: 6px;
+            line-height: 1.2;
+            word-break: break-word;
+            max-width: 100%;
+        }
+        
+        .preset-info {
+            font-size: 10px;
+            color: #718096;
+            text-align: center;
+            line-height: 1.3;
+        }
+        
+        .preset-info span {
+            display: inline-block;
+            margin: 1px 2px;
+            padding: 2px 4px;
+            background: #f7fafc;
+            border-radius: 3px;
+            border: 1px solid #e2e8f0;
+            font-size: 9px;
+        }
+        
+        .preset-apply-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            background: #3182ce;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 10px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+        }
+        
+        .preset-item:hover .preset-apply-btn {
+            opacity: 1;
+        }
+        
+        .preset-apply-btn:hover {
+            background: #2c5282;
+            transform: scale(1.05);
+        }
+        
+        /* 预设统计信息 */
+        .preset-stats {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+        
+        .preset-stats span {
+            color: #4a5568;
+            font-weight: 500;
+        }
+        
+        .preset-stats .count {
+            background: #3182ce;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 1200px) {
+            .preset-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .preset-grid {
+                grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+                gap: 8px;
+                padding: 12px;
+            }
+            
+            .preset-item {
+                min-height: 120px;
+                padding: 8px;
+            }
+            
+            .preset-canvas {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .preset-name {
+                font-size: 11px;
+            }
+            
+            .preset-info {
+                font-size: 9px;
+            }
+            
+            .preset-info span {
+                font-size: 8px;
+                padding: 1px 3px;
+            }
+        }
+        
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0;
+        }
+        
+        /* 动画 */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        @keyframes slideOut {
+            from { opacity: 1; transform: translateX(0); }
+            to { opacity: 0; transform: translateX(100px); }
+        }
+        
+        .control-group {
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .preview-section {
+                min-height: 200px;
+                margin: 16px;
+            }
+            
+            .controls-section {
+                margin: 0 16px 16px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="window-controls">
+        <button class="minimize-btn" onclick="minimizeWindow()">_</button>
+        <button class="maximize-btn" onclick="maximizeWindow()">□</button>
+        <button class="close-btn" onclick="closeWindow()">×</button>
+    </div>
+    
+    <div class="sidebar">
+        <h1>屏幕准星助手</h1>
+        
+        <div class="status-bar">
+            <div>
+                <span class="status-indicator active" id="mainStatus"></span>
+                <span>应用状态</span>
+            </div>
+            <div>
+                <span id="modeText">窗口模式</span>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h2>准星样式</h2>
+            <label for="style">样式选择</label>
+            <select id="style">
+                <option value="cross">十字准星</option>
+                <option value="dot">圆点准星</option>
+                <option value="t-shape">T型准星</option>
+                <option value="circle">圆圈准星</option>
+                <option value="custom">自定义准星</option>
+            </select>
+        </div>
+        
+        <div class="control-group">
+            <h2>预设准星库</h2>
+            
+            <!-- 统计信息 -->
+            <div class="preset-stats">
+                <span>总预设数量: <span class="count">200</span></span>
+                <span>当前显示: <span id="visibleCount">200</span></span>
+                <span>已应用: <span id="appliedCount">0</span></span>
+            </div>
+            
+            <!-- 筛选控制 -->
+            <div class="preset-filters">
+                <div class="filter-group">
+                    <label for="categoryFilter">分类筛选:</label>
+                    <select id="categoryFilter">
+                        <option value="all">全部预设</option>
+                        <option value="classic">经典基础 (1-20)</option>
+                        <option value="pro">职业选手 (21-40)</option>
+                        <option value="geometric">创意几何 (41-60)</option>
+                        <option value="gaming">游戏主题 (61-80)</option>
+                        <option value="effects">特殊效果 (81-100)</option>
+                        <option value="scifi">科幻未来 (101-120)</option>
+                        <option value="nature">自然元素 (121-140)</option>
+                        <option value="military">军事战术 (141-160)</option>
+                        <option value="artistic">艺术创意 (161-180)</option>
+                        <option value="extreme">极限运动 (181-200)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="styleFilter">样式筛选:</label>
+                    <select id="styleFilter">
+                        <option value="all">全部样式</option>
+                        <option value="cross">十字准星</option>
+                        <option value="dot">圆点准星</option>
+                        <option value="t-shape">T型准星</option>
+                        <option value="circle">圆圈准星</option>
+                        <option value="custom">自定义准星</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- 预设网格 -->
+            <div class="preset-grid" id="presetGrid">
+                <!-- 预设项将通过JavaScript动态生成 -->
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h2>颜色设置</h2>
+            <label for="color">准星颜色:</label>
+            <div class="color-input-group">
+                <input type="color" id="color" value="#00ff00">
+                <input type="text" id="colorHex" value="#00ff00" placeholder="#RRGGBB">
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h2>尺寸设置</h2>
+            <label for="size">准星大小: <span class="value-display" id="sizeValue">20</span></label>
+            <input type="range" id="size" min="5" max="100" value="20">
+            
+            <!-- 快速尺寸预设 -->
+            <div class="preset-buttons">
+                <button onclick="setSize(10)">小</button>
+                <button onclick="setSize(20)">中</button>
+                <button onclick="setSize(30)">大</button>
+                <button onclick="setSize(50)">特大</button>
+            </div>
+            
+            <label for="thickness">线条粗细: <span class="value-display" id="thicknessValue">2</span></label>
+            <input type="range" id="thickness" min="1" max="10" value="2">
+            
+            <label for="gap">中心间隙: <span class="value-display" id="gapValue">5</span></label>
+            <input type="range" id="gap" min="0" max="50" value="5">
+        </div>
+        
+        <div class="control-group">
+            <h2>透明度设置</h2>
+            <label for="opacity">透明度: <span class="value-display" id="opacityValue">80%</span></label>
+            <input type="range" id="opacity" min="10" max="100" value="80">
+            
+            <!-- 快速透明度预设 -->
+            <div class="preset-buttons">
+                <button onclick="setOpacity(25)">25%</button>
+                <button onclick="setOpacity(50)">50%</button>
+                <button onclick="setOpacity(75)">75%</button>
+                <button onclick="setOpacity(100)">100%</button>
+            </div>
+        </div>
+        
+        <div class="control-group">
+            <h2>位置设置</h2>
+            <div class="position-inputs">
+                <div>
+                    <label for="posX">X 坐标: <span class="value-display" id="posXValue">50%</span></label>
+                    <input type="range" id="posX" min="10" max="90" value="50">
+                    <div class="fine-tune">
+                        <button onclick="adjustPosition('x', -1)">←</button>
+                        <button onclick="adjustPosition('x', 1)">→</button>
+                    </div>
+                </div>
+                <div>
+                    <label for="posY">Y 坐标: <span class="value-display" id="posYValue">50%</span></label>
+                    <input type="range" id="posY" min="10" max="90" value="50">
+                    <div class="fine-tune">
+                        <button onclick="adjustPosition('y', -1)">↑</button>
+                        <button onclick="adjustPosition('y', 1)">↓</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 快速位置预设 -->
+            <div class="preset-buttons">
+                <button onclick="setPosition(50, 50)">居中</button>
+                <button onclick="setPosition(25, 50)">左中</button>
+                <button onclick="setPosition(75, 50)">右中</button>
+                <button onclick="setPosition(50, 25)">上中</button>
+                <button onclick="setPosition(50, 75)">下中</button>
+            </div>
+            
+            <div class="button-group">
+                <button onclick="centerCrosshair()">重置居中</button>
+                <button onclick="toggleOverlay()" class="secondary">覆盖模式</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="main-content">
+        <div class="preview-section">
+            <canvas id="previewCanvas" width="400" height="300"></canvas>
+        </div>
+        
+        <div class="controls-section">
+            <h2>配置管理</h2>
+            <div class="control-group">
+                <label for="presetName">配置名称:</label>
+                <input type="text" id="presetName" placeholder="输入配置名称">
+                <button onclick="savePreset()" class="secondary">保存配置</button>
+            </div>
+            
+            <div class="control-group">
+                <label>已保存的配置:</label>
+                <div id="presetList"></div>
+            </div>
+            
+            <h2>快捷操作</h2>
+            <div class="button-group">
+                <button onclick="toggleCrosshair()">显示/隐藏准星</button>
+                <button onclick="resetToDefault()" class="danger">重置默认</button>
+                <button onclick="exportConfig()" class="secondary">导出配置</button>
+                <button onclick="requestFullscreen()" class="secondary">全屏模式</button>
+            </div>
+            
+            <h2>状态</h2>
+            <div class="info-box">
+                <p>准星状态: <span id="visibilityStatus">显示</span></p>
+                <p>覆盖模式: <span id="overlayStatus">关闭</span></p>
+                <p>窗口模式: <span id="windowStatus">窗口</span></p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="overlay-mode" id="overlayMode">
+        <canvas id="overlayCanvas"></canvas>
+    </div>
+    
+    <script>
+        // 200款创意预设准星配置
+        const presetCrosshairs = [
+            // 经典基础系列 (1-20) - 不同颜色和参数变化
+            { name: "经典绿色", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "经典红色", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "经典白色", style: "cross", color: "#ffffff", size: 20, thickness: 2, gap: 5, opacity: 0.9, category: "classic" },
+            { name: "经典黄色", style: "cross", color: "#ffff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "经典青色", style: "cross", color: "#00ffff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "细线绿色", style: "cross", color: "#00ff00", size: 15, thickness: 1, gap: 3, opacity: 0.8, category: "classic" },
+            { name: "粗线红色", style: "cross", color: "#ff0000", size: 25, thickness: 4, gap: 8, opacity: 0.8, category: "classic" },
+            { name: "半透白色", style: "cross", color: "#ffffff", size: 18, thickness: 2, gap: 4, opacity: 0.6, category: "classic" },
+            { name: "橙色经典", style: "cross", color: "#ff8800", size: 22, thickness: 3, gap: 6, opacity: 0.8, category: "classic" },
+            { name: "紫色经典", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "粉色经典", style: "cross", color: "#ff69b4", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "深蓝经典", style: "cross", color: "#0080ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "绿色细线", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 4, opacity: 0.9, category: "classic" },
+            { name: "红色粗线", style: "cross", color: "#ff0000", size: 24, thickness: 3, gap: 7, opacity: 0.8, category: "classic" },
+            { name: "白色小十字", style: "cross", color: "#ffffff", size: 12, thickness: 1, gap: 2, opacity: 0.9, category: "classic" },
+            { name: "黄色大十字", style: "cross", color: "#ffff00", size: 28, thickness: 3, gap: 8, opacity: 0.8, category: "classic" },
+            { name: "青色中十字", style: "cross", color: "#00ffff", size: 20, thickness: 2, gap: 5, opacity: 0.7, category: "classic" },
+            { name: "灰色经典", style: "cross", color: "#808080", size: 18, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "棕色经典", style: "cross", color: "#8b4513", size: 19, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            { name: "金色经典", style: "cross", color: "#ffd700", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "classic" },
+            
+            // 职业选手系列 (21-40) - 真实的职业选手配置
+            { name: "s1mple风格", style: "cross", color: "#00ff00", size: 22, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "ZywOo风格", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 2, opacity: 0.8, category: "pro" },
+            { name: "NiKo风格", style: "cross", color: "#00ff00", size: 18, thickness: 1, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "device风格", style: "cross", color: "#00ff00", size: 24, thickness: 2, gap: 5, opacity: 0.8, category: "pro" },
+            { name: "shox风格", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "pro" },
+            { name: "kennyS风格", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 4, opacity: 0.8, category: "pro" },
+            { name: "cold风格", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "fallen风格", style: "cross", color: "#00ff00", size: 21, thickness: 2, gap: 4, opacity: 0.8, category: "pro" },
+            { name: "fer风格", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "rain风格", style: "cross", color: "#00ff00", size: 23, thickness: 2, gap: 5, opacity: 0.8, category: "pro" },
+            { name: "olofmeister风格", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "get_right风格", style: "cross", color: "#00ff00", size: 18, thickness: 1, gap: 2, opacity: 0.8, category: "pro" },
+            { name: "f0rest风格", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "forest风格", style: "cross", color: "#00ff00", size: 21, thickness: 2, gap: 4, opacity: 0.8, category: "pro" },
+            { name: "xyp9x风格", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 2, opacity: 0.8, category: "pro" },
+            { name: "dupreeh风格", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "magisk风格", style: "cross", color: "#00ff00", size: 18, thickness: 1, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "gla1ve风格", style: "cross", color: "#00ff00", size: 22, thickness: 2, gap: 4, opacity: 0.8, category: "pro" },
+            { name: "electronic风格", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "b1t风格", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 3, opacity: 0.8, category: "pro" },
+            { name: "perfecto风格", style: "cross", color: "#00ff00", size: 18, thickness: 1, gap: 2, opacity: 0.8, category: "pro" },
+            
+            // 创意几何系列 (41-60) - 真正的几何形状
+            { name: "菱形绿色", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "菱形红色", style: "custom", color: "#ff0000", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "三角蓝色", style: "custom", color: "#0080ff", size: 22, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "三角黄色", style: "custom", color: "#ffff00", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "五角星紫色", style: "custom", color: "#ff00ff", size: 24, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "五角星金色", style: "custom", color: "#ffd700", size: 22, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "六边形青色", style: "custom", color: "#00ffff", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "六边形橙色", style: "custom", color: "#ff8800", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "心形粉色", style: "custom", color: "#ff69b4", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "心形红色", style: "custom", color: "#ff0000", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "箭头绿色", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "箭头蓝色", style: "custom", color: "#0080ff", size: 22, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "闪电黄色", style: "custom", color: "#ffff00", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "闪电紫色", style: "custom", color: "#ff00ff", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "月亮银色", style: "custom", color: "#c0c0c0", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "月亮金色", style: "custom", color: "#ffd700", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "太阳橙色", style: "custom", color: "#ff8800", size: 24, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "太阳红色", style: "custom", color: "#ff0000", size: 22, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "翅膀白色", style: "custom", color: "#ffffff", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "翅膀金色", style: "custom", color: "#ffd700", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "盾牌蓝色", style: "custom", color: "#0080ff", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "盾牌银色", style: "custom", color: "#c0c0c0", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "王冠金色", style: "custom", color: "#ffd700", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "王冠紫色", style: "custom", color: "#ff00ff", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "宝剑银色", style: "custom", color: "#c0c0c0", size: 22, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "宝剑金色", style: "custom", color: "#ffd700", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "钥匙铜色", style: "custom", color: "#b87333", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            { name: "钥匙银色", style: "custom", color: "#c0c0c0", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "geometric" },
+            
+            // 游戏主题系列 (61-80) - 真实的游戏风格
+            { name: "CS:GO经典", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "Valorant风格", style: "circle", color: "#ff4655", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "gaming" },
+            { name: "Overwatch风格", style: "cross", color: "#ffa500", size: 22, thickness: 3, gap: 6, opacity: 0.8, category: "gaming" },
+            { name: "Apex英雄", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "彩虹六号", style: "cross", color: "#00ffff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "gaming" },
+            { name: "PUBG风格", style: "cross", color: "#ffffff", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "堡垒之夜", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "使命召唤", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "战地风云", style: "cross", color: "#0080ff", size: 23, thickness: 2, gap: 6, opacity: 0.8, category: "gaming" },
+            { name: "泰坦陨落", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "光环风格", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "gaming" },
+            { name: "毁灭战士", style: "cross", color: "#ff0000", size: 24, thickness: 3, gap: 7, opacity: 0.8, category: "gaming" },
+            { name: "雷神之锤", style: "cross", color: "#ffff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "反恐精英", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "全球攻势", style: "cross", color: "#00ff00", size: 22, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "无畏契约", style: "circle", color: "#0f1923", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "gaming" },
+            { name: "英雄联盟", style: "cross", color: "#c89b3c", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "DOTA2", style: "cross", color: "#c89b3c", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "守望先锋", style: "cross", color: "#ffa500", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "绝地求生", style: "cross", color: "#ffffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "荒野行动", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "gaming" },
+            { name: "穿越火线", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "特种部队", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "生化危机", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "寂静岭", style: "cross", color: "#808080", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "gaming" },
+            { name: "合金装备", style: "cross", color: "#0080ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "细胞分裂", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "gaming" },
+            { name: "刺客信条", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "古墓丽影", style: "cross", color: "#8b4513", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "神秘海域", style: "cross", color: "#0080ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "gaming" },
+            { name: "最后生还者", style: "cross", color: "#808080", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "gaming" },
+            { name: "巫师3", style: "cross", color: "#ffd700", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "上古卷轴", style: "cross", color: "#c0c0c0", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "gaming" },
+            { name: "Astralis", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "pro" },
+            { name: "TeamLiquid", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "pro" },
+            
+            // 特殊效果系列 (81-100) - 真实的特效风格
+            { name: "霓虹绿色", style: "cross", color: "#00ff00", size: 20, thickness: 3, gap: 5, opacity: 1.0, category: "effects" },
+            { name: "霓虹红色", style: "cross", color: "#ff0000", size: 20, thickness: 3, gap: 5, opacity: 1.0, category: "effects" },
+            { name: "霓虹蓝色", style: "cross", color: "#0080ff", size: 20, thickness: 3, gap: 5, opacity: 1.0, category: "effects" },
+            { name: "荧光黄色", style: "cross", color: "#ffff00", size: 22, thickness: 3, gap: 6, opacity: 0.9, category: "effects" },
+            { name: "荧光粉色", style: "cross", color: "#ff69b4", size: 18, thickness: 3, gap: 4, opacity: 0.9, category: "effects" },
+            { name: "激光绿色", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 1.0, category: "effects" },
+            { name: "激光红色", style: "cross", color: "#ff0000", size: 16, thickness: 1, gap: 2, opacity: 1.0, category: "effects" },
+            { name: "激光蓝色", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 2, opacity: 1.0, category: "effects" },
+            { name: "脉冲效果", style: "cross", color: "#ffffff", size: 20, thickness: 2, gap: 5, opacity: 0.7, category: "effects" },
+            { name: "呼吸灯", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.6, category: "effects" },
+            { name: "闪烁效果", style: "cross", color: "#ffff00", size: 19, thickness: 2, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "渐变效果", style: "cross", color: "#ff00ff", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "发光效果", style: "cross", color: "#00ffff", size: 20, thickness: 4, gap: 5, opacity: 0.9, category: "effects" },
+            { name: "阴影效果", style: "cross", color: "#ffffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "effects" },
+            { name: "描边效果", style: "cross", color: "#000000", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "光晕效果", style: "circle", color: "#ffffff", size: 16, thickness: 2, gap: 0, opacity: 0.5, category: "effects" },
+            { name: "星光效果", style: "cross", color: "#ffff00", size: 17, thickness: 1, gap: 3, opacity: 0.9, category: "effects" },
+            { name: "月光效果", style: "cross", color: "#c0c0c0", size: 19, thickness: 2, gap: 4, opacity: 0.7, category: "effects" },
+            { name: "日光效果", style: "cross", color: "#ffd700", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "彩虹效果", style: "cross", color: "#ff0000", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "effects" },
+            { name: "极光效果", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.6, category: "effects" },
+            { name: "闪电效果", style: "cross", color: "#ffff00", size: 16, thickness: 1, gap: 2, opacity: 1.0, category: "effects" },
+            { name: "火焰效果", style: "cross", color: "#ff4500", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "冰霜效果", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.7, category: "effects" },
+            { name: "毒液效果", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "血液效果", style: "cross", color: "#8b0000", size: 17, thickness: 2, gap: 4, opacity: 0.8, category: "effects" },
+            { name: "魔法效果", style: "cross", color: "#ff00ff", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "effects" },
+            { name: "神圣效果", style: "cross", color: "#ffd700", size: 20, thickness: 3, gap: 5, opacity: 0.9, category: "effects" },
+            { name: "暗黑效果", style: "cross", color: "#4b0082", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "effects" },
+            { name: "幽灵效果", style: "cross", color: "#ffffff", size: 16, thickness: 1, gap: 3, opacity: 0.4, category: "effects" },
+            { name: "幻影效果", style: "cross", color: "#808080", size: 17, thickness: 1, gap: 3, opacity: 0.5, category: "effects" },
+            { name: "镜像效果", style: "cross", color: "#00ffff", size: 19, thickness: 2, gap: 4, opacity: 0.6, category: "effects" },
+            
+            // 科幻未来系列 (101-120) - 真实的科幻风格
+            { name: "赛博朋克", style: "cross", color: "#00ffff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "量子风格", style: "cross", color: "#ff00ff", size: 18, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "数字雨", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 0.9, category: "scifi" },
+            { name: "全息投影", style: "cross", color: "#00ffff", size: 19, thickness: 2, gap: 4, opacity: 0.6, category: "scifi" },
+            { name: "激光网格", style: "cross", color: "#ff0000", size: 22, thickness: 1, gap: 6, opacity: 0.8, category: "scifi" },
+            { name: "等离子体", style: "cross", color: "#ff00ff", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "反物质", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "暗物质", style: "cross", color: "#4b0082", size: 17, thickness: 2, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "虫洞", style: "cross", color: "#800080", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "时空裂缝", style: "cross", color: "#00ffff", size: 19, thickness: 1, gap: 4, opacity: 0.7, category: "scifi" },
+            { name: "虚拟现实", style: "cross", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "增强现实", style: "cross", color: "#ff00ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "人工智能", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "机器人", style: "cross", color: "#ff0000", size: 22, thickness: 3, gap: 6, opacity: 0.8, category: "scifi" },
+            { name: "机甲风格", style: "cross", color: "#808080", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "星际旅行", style: "cross", color: "#ffd700", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "银河系", style: "cross", color: "#c0c0c0", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "外星科技", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "未来战士", style: "cross", color: "#0080ff", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "时空战士", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "量子计算机", style: "cross", color: "#00ffff", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "scifi" },
+            { name: "纳米技术", style: "cross", color: "#00ff00", size: 15, thickness: 1, gap: 2, opacity: 0.8, category: "scifi" },
+            { name: "生物科技", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "基因工程", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "克隆技术", style: "cross", color: "#800080", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "时间旅行", style: "cross", color: "#ffd700", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "平行宇宙", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "元宇宙", style: "cross", color: "#ff00ff", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "scifi" },
+            { name: "区块链", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "加密货币", style: "cross", color: "#ffd700", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "数字经济", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "智能城市", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "自动驾驶", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "无人机", style: "cross", color: "#808080", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "scifi" },
+            { name: "太空探索", style: "cross", color: "#c0c0c0", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "scifi" },
+            { name: "火星殖民", style: "cross", color: "#ff4500", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            { name: "月球基地", style: "cross", color: "#f0f0f0", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "scifi" },
+            
+            // 自然元素系列 (121-140) - 真实的自然风格
+            { name: "火焰", style: "custom", color: "#ff4500", size: 20, thickness: 3, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "水滴", style: "dot", color: "#0080ff", size: 8, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "雪花", style: "custom", color: "#ffffff", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "闪电", style: "custom", color: "#ffff00", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "彩虹", style: "cross", color: "#ff0000", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "nature" },
+            { name: "太阳", style: "custom", color: "#ffd700", size: 24, thickness: 3, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "月亮", style: "custom", color: "#f0f0f0", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "星星", style: "dot", color: "#ffff00", size: 6, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "云朵", style: "circle", color: "#ffffff", size: 20, thickness: 2, gap: 0, opacity: 0.6, category: "nature" },
+            { name: "雨滴", style: "dot", color: "#0080ff", size: 4, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "冰雪", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.7, category: "nature" },
+            { name: "火山", style: "cross", color: "#ff0000", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "nature" },
+            { name: "海洋", style: "cross", color: "#0080ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "森林", style: "cross", color: "#228b22", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "沙漠", style: "cross", color: "#ffd700", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "nature" },
+            { name: "山脉", style: "cross", color: "#8b4513", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "nature" },
+            { name: "河流", style: "cross", color: "#0080ff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "nature" },
+            { name: "湖泊", style: "circle", color: "#0080ff", size: 16, thickness: 2, gap: 0, opacity: 0.7, category: "nature" },
+            { name: "草地", style: "cross", color: "#228b22", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "nature" },
+            { name: "花朵", style: "custom", color: "#ff69b4", size: 12, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "树叶", style: "custom", color: "#228b22", size: 14, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "石头", style: "cross", color: "#808080", size: 18, thickness: 3, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "水晶", style: "custom", color: "#00ffff", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "钻石", style: "custom", color: "#b9f2ff", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "黄金", style: "cross", color: "#ffd700", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "nature" },
+            { name: "白银", style: "cross", color: "#c0c0c0", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "青铜", style: "cross", color: "#cd7f32", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "钢铁", style: "cross", color: "#708090", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "nature" },
+            { name: "木材", style: "cross", color: "#8b4513", size: 17, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "竹子", style: "cross", color: "#228b22", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "nature" },
+            { name: "藤蔓", style: "cross", color: "#228b22", size: 15, thickness: 1, gap: 2, opacity: 0.8, category: "nature" },
+            { name: "珊瑚", style: "custom", color: "#ff7f50", size: 14, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "贝壳", style: "custom", color: "#fff8dc", size: 12, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "珍珠", style: "dot", color: "#f8f8ff", size: 6, thickness: 2, gap: 0, opacity: 0.8, category: "nature" },
+            { name: "琥珀", style: "cross", color: "#ffbf00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "翡翠", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "玛瑙", style: "cross", color: "#8b0000", size: 17, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "石英", style: "cross", color: "#f5f5dc", size: 16, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "石榴石", style: "cross", color: "#dc143c", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "蓝宝石", style: "cross", color: "#0000cd", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            { name: "红宝石", style: "cross", color: "#dc143c", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "nature" },
+            { name: "祖母绿", style: "cross", color: "#50c878", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "nature" },
+            
+            // 军事战术系列 (141-160) - 真实的军事风格
+            { name: "狙击手", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "特种兵", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "侦察兵", style: "cross", color: "#0080ff", size: 14, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "爆破手", style: "cross", color: "#ff8800", size: 20, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "医疗兵", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "工程师", style: "cross", color: "#ffff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "通信兵", style: "cross", color: "#00ff00", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "重装兵", style: "cross", color: "#808080", size: 22, thickness: 3, gap: 6, opacity: 0.8, category: "military" },
+            { name: "突击手", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "支援手", style: "cross", color: "#0080ff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "指挥官", style: "cross", color: "#ffd700", size: 20, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "飞行员", style: "cross", color: "#00ffff", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "坦克手", style: "cross", color: "#808080", size: 24, thickness: 3, gap: 7, opacity: 0.8, category: "military" },
+            { name: "炮手", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "海军", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "陆军", style: "cross", color: "#228b22", size: 17, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "空军", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "海军陆战队", style: "cross", color: "#0080ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "空降兵", style: "cross", color: "#00ff00", size: 15, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "工兵", style: "cross", color: "#ffff00", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "防化兵", style: "cross", color: "#00ff00", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "宪兵", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军医", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军械师", style: "cross", color: "#808080", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "军需官", style: "cross", color: "#8b4513", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军法官", style: "cross", color: "#000000", size: 17, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军情官", style: "cross", color: "#800080", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "军令官", style: "cross", color: "#ffd700", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军旗手", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "军号手", style: "cross", color: "#ffd700", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "军鼓手", style: "cross", color: "#8b4513", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军乐队", style: "cross", color: "#ffd700", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军礼官", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军史官", style: "cross", color: "#8b4513", size: 16, thickness: 1, gap: 2, opacity: 0.8, category: "military" },
+            { name: "军教官", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 3, opacity: 0.8, category: "military" },
+            { name: "军械库", style: "cross", color: "#808080", size: 20, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "军火库", style: "cross", color: "#ff0000", size: 21, thickness: 3, gap: 5, opacity: 0.8, category: "military" },
+            { name: "军营", style: "cross", color: "#228b22", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "军港", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "military" },
+            { name: "军机场", style: "cross", color: "#808080", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "military" },
+            
+            // 艺术创意系列 (161-180) - 真正的艺术风格
+            { name: "抽象艺术", style: "custom", color: "#ff00ff", size: 20, thickness: 2, gap: 0, opacity: 0.8, category: "artistic" },
+            { name: "印象派", style: "cross", color: "#ffa500", size: 18, thickness: 2, gap: 4, opacity: 0.7, category: "artistic" },
+            { name: "立体主义", style: "cross", color: "#0080ff", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "artistic" },
+            { name: "超现实主义", style: "custom", color: "#ff00ff", size: 16, thickness: 2, gap: 0, opacity: 0.8, category: "artistic" },
+            { name: "波普艺术", style: "cross", color: "#ff0000", size: 20, thickness: 3, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "极简主义", style: "cross", color: "#000000", size: 12, thickness: 1, gap: 2, opacity: 0.8, category: "artistic" },
+            { name: "概念艺术", style: "custom", color: "#00ffff", size: 18, thickness: 2, gap: 0, opacity: 0.8, category: "artistic" },
+            { name: "行为艺术", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "装置艺术", style: "cross", color: "#00ff00", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "数字艺术", style: "cross", color: "#00ffff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "街头艺术", style: "cross", color: "#ff8800", size: 20, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "涂鸦艺术", style: "cross", color: "#ff00ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "壁画艺术", style: "cross", color: "#ffd700", size: 22, thickness: 2, gap: 6, opacity: 0.8, category: "artistic" },
+            { name: "雕塑艺术", style: "cross", color: "#808080", size: 19, thickness: 3, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "油画艺术", style: "cross", color: "#8b4513", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "水彩艺术", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 3, opacity: 0.7, category: "artistic" },
+            { name: "素描艺术", style: "cross", color: "#000000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "版画艺术", style: "cross", color: "#000000", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "摄影艺术", style: "cross", color: "#808080", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "电影艺术", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "音乐艺术", style: "cross", color: "#ff00ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "舞蹈艺术", style: "cross", color: "#ffa500", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "戏剧艺术", style: "cross", color: "#ffd700", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "文学艺术", style: "cross", color: "#8b4513", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "诗歌艺术", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "散文艺术", style: "cross", color: "#228b22", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "小说艺术", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "童话艺术", style: "cross", color: "#ff69b4", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "神话艺术", style: "cross", color: "#ffd700", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "传说艺术", style: "cross", color: "#800080", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "民间艺术", style: "cross", color: "#ff8800", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "传统艺术", style: "cross", color: "#8b4513", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "现代艺术", style: "cross", color: "#00ffff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "当代艺术", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "前卫艺术", style: "cross", color: "#00ff00", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "实验艺术", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "跨界艺术", style: "cross", color: "#ffa500", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "融合艺术", style: "cross", color: "#0080ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "综合艺术", style: "cross", color: "#ff00ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            { name: "混合艺术", style: "cross", color: "#ffff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "多媒体艺术", style: "cross", color: "#00ffff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "新媒体艺术", style: "cross", color: "#ff00ff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "artistic" },
+            { name: "互动艺术", style: "cross", color: "#00ff00", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "虚拟艺术", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "artistic" },
+            { name: "增强艺术", style: "cross", color: "#ffa500", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "artistic" },
+            
+            // 极限运动系列 (181-200) - 真实的运动风格
+            { name: "滑板", style: "cross", color: "#ff8800", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "冲浪", style: "cross", color: "#0080ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "攀岩", style: "cross", color: "#8b4513", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "蹦极", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "跳伞", style: "cross", color: "#00ffff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "滑翔伞", style: "cross", color: "#ff8800", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "帆船", style: "cross", color: "#ffffff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "风筝冲浪", style: "cross", color: "#00ffff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "山地车", style: "cross", color: "#228b22", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "摩托车", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "赛车", style: "cross", color: "#ff0000", size: 21, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "滑雪", style: "cross", color: "#ffffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "单板滑雪", style: "cross", color: "#0080ff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "自由式滑雪", style: "cross", color: "#ff00ff", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "越野滑雪", style: "cross", color: "#228b22", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "跳台滑雪", style: "cross", color: "#ff8800", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "冰球", style: "cross", color: "#ff0000", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "冰壶", style: "cross", color: "#808080", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "雪橇", style: "cross", color: "#8b4513", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "雪车", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "冰上舞蹈", style: "cross", color: "#ff69b4", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "花样滑冰", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "速度滑冰", style: "cross", color: "#0080ff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "短道速滑", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "拳击", style: "cross", color: "#ff0000", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "武术", style: "cross", color: "#000000", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "跆拳道", style: "cross", color: "#0000ff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "柔道", style: "cross", color: "#ffffff", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "空手道", style: "cross", color: "#000000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "瑜伽", style: "cross", color: "#ff69b4", size: 15, thickness: 1, gap: 2, opacity: 0.8, category: "extreme" },
+            { name: "健身", style: "cross", color: "#32cd32", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "健美", style: "cross", color: "#ff8800", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "举重", style: "cross", color: "#808080", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "马拉松", style: "cross", color: "#228b22", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "铁人三项", style: "cross", color: "#0080ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "越野跑", style: "cross", color: "#8b4513", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "障碍跑", style: "cross", color: "#ff0000", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "极限跑酷", style: "cross", color: "#00ff00", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "街头跑酷", style: "cross", color: "#ff8800", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "自由跑", style: "cross", color: "#00ffff", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "跑酷", style: "cross", color: "#ff00ff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "极限运动", style: "cross", color: "#ff0000", size: 19, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "冒险运动", style: "cross", color: "#0080ff", size: 20, thickness: 2, gap: 5, opacity: 0.8, category: "extreme" },
+            { name: "户外运动", style: "cross", color: "#228b22", size: 17, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "水上运动", style: "cross", color: "#00ffff", size: 18, thickness: 2, gap: 4, opacity: 0.8, category: "extreme" },
+            { name: "空中运动", style: "cross", color: "#87ceeb", size: 16, thickness: 1, gap: 3, opacity: 0.8, category: "extreme" },
+            { name: "透明效果", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.4, category: "effects" },
+            { name: "半透明效果", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.6, category: "effects" },
+            { name: "高对比度", style: "custom", color: "#00ff00", size: 20, thickness: 3, gap: 5, opacity: 1.0, category: "effects" },
+            { name: "低对比度", style: "custom", color: "#00ff00", size: 20, thickness: 1, gap: 5, opacity: 0.6, category: "effects" },
+            { name: "模糊效果", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.5, category: "effects" },
+            { name: "清晰效果", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 1.0, category: "effects" },
+            { name: "柔和效果", style: "custom", color: "#00ff00", size: 20, thickness: 2, gap: 5, opacity: 0.7, category: "effects" },
+            
+            ];
+        
+        // 全局变量
+        let previewCanvas, ctx, overlayCanvas, overlayCtx, overlayMode;
+        let controls;
+        let currentConfig;
+        let presets = {};
+        let overlayActive = false;
+        let isFullscreen = false;
+        
+        // 检测是否在Electron环境中运行
+        const isElectron = !!(window.electronAPI);
+        
+        // 配置同步函数
+        function syncConfigToOverlay() {
+            if (isElectron && window.electronAPI) {
+                // 使用简化的IPC通信
+                window.electronAPI.updateCrosshair(currentConfig);
+            }
+        }
+        
+        // 初始化
+        function init() {
+            // 获取DOM元素
+            previewCanvas = document.getElementById('previewCanvas');
+            ctx = previewCanvas.getContext('2d');
+            overlayCanvas = document.getElementById('overlayCanvas');
+            overlayCtx = overlayCanvas.getContext('2d');
+            overlayMode = document.getElementById('overlayMode');
+            
+            controls = {
+                style: document.getElementById('style'),
+                color: document.getElementById('color'),
+                colorHex: document.getElementById('colorHex'),
+                size: document.getElementById('size'),
+                thickness: document.getElementById('thickness'),
+                gap: document.getElementById('gap'),
+                opacity: document.getElementById('opacity'),
+                posX: document.getElementById('posX'),
+                posY: document.getElementById('posY'),
+                presetName: document.getElementById('presetName'),
+                presetList: document.getElementById('presetList'),
+                categoryFilter: document.getElementById('categoryFilter'),
+                styleFilter: document.getElementById('styleFilter'),
+                presetGrid: document.getElementById('presetGrid')
+            };
+            
+            // 调试信息
+            console.log('Controls:', controls);
+            console.log('Preset grid element:', controls.presetGrid);
+            console.log('Preset crosshairs count:', presetCrosshairs.length);
+            
+            // 当前配置
+            currentConfig = {
+                style: 'cross',
+                color: '#00ff00',
+                size: 20,
+                thickness: 2,
+                gap: 5,
+                opacity: 0.8,
+                x: 0.5,
+                y: 0.5,
+                visible: true
+            };
+            
+            // 确保overlayActive为false
+            overlayActive = false;
+            console.log('overlayActive set to false');
+            
+            loadConfig();
+            updateControls();
+            updateConfig();
+            loadPresets();
+            setupOverlayCanvas();
+            updateStatus();
+            loadPresetCrosshairs();
+            setupEventListeners();
+            
+            console.log('Initialization completed');
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 安全检查：确保controls对象存在
+            if (!controls) {
+                console.error('Controls object is not defined!');
+                return;
+            }
+            
+            // 预设筛选事件
+            if (controls.categoryFilter) {
+                controls.categoryFilter.addEventListener('change', filterPresets);
+            }
+            
+            if (controls.styleFilter) {
+                controls.styleFilter.addEventListener('change', filterPresets);
+            }
+            
+            // 控件事件监听器
+            if (controls.style) {
+                controls.style.addEventListener('change', updateConfig);
+            }
+            
+            if (controls.color) {
+                controls.color.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.colorHex) {
+                controls.colorHex.addEventListener('input', (e) => {
+                    if (/^#[0-9A-F]{6}$/i.test(e.target.value)) {
+                        controls.color.value = e.target.value;
+                        updateConfig();
+                    }
+                });
+            }
+            
+            if (controls.size) {
+                controls.size.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.thickness) {
+                controls.thickness.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.gap) {
+                controls.gap.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.opacity) {
+                controls.opacity.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.posX) {
+                controls.posX.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.posY) {
+                controls.posY.addEventListener('input', updateConfig);
+            }
+            
+            if (controls.overlayMode) {
+                controls.overlayMode.addEventListener('click', toggleOverlay);
+            }
+            
+            console.log('All event listeners set up successfully');
+        }
+        
+        // 加载预设准星网格
+        function loadPresetCrosshairs() {
+            console.log('loadPresetCrosshairs called');
+            console.log('presetCrosshairs array:', presetCrosshairs);
+            console.log('presetCrosshairs length:', presetCrosshairs.length);
+            
+            const grid = document.getElementById('presetGrid');
+            console.log('Grid element in loadPresetCrosshairs:', grid);
+            
+            if (!grid) {
+                console.error('Grid not found in loadPresetCrosshairs!');
+                return;
+            }
+            
+            // 清空现有内容（包括测试项）
+            grid.innerHTML = '';
+            console.log('Grid cleared in loadPresetCrosshairs');
+            
+            try {
+                renderPresetGrid(presetCrosshairs);
+                console.log('renderPresetGrid completed successfully');
+            } catch (error) {
+                console.error('Error in loadPresetCrosshairs:', error);
+                console.error('Error stack:', error.stack);
+                
+                // 如果出错，添加错误信息到grid
+                grid.innerHTML = `
+                    <div style="background: #ff6b6b; color: white; padding: 20px; border-radius: 8px; margin: 10px;">
+                        <h3>加载预设时出错</h3>
+                        <p>错误信息: ${error.message}</p>
+                        <p>预设数量: ${presetCrosshairs ? presetCrosshairs.length : 'undefined'}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 渲染预设网格
+        function renderPresetGrid(presets) {
+            console.log('=== renderPresetGrid START ===');
+            console.log('presets parameter:', presets);
+            console.log('presets type:', typeof presets);
+            console.log('presets length:', presets ? presets.length : 'undefined');
+            
+            const grid = document.getElementById('presetGrid');
+            console.log('grid element:', grid);
+            console.log('grid element type:', typeof grid);
+            
+            if (!grid) {
+                console.error('presetGrid element not found!');
+                return;
+            }
+            
+            console.log('Current grid innerHTML before clear:', grid.innerHTML);
+            grid.innerHTML = '';
+            console.log('Grid cleared, innerHTML after clear:', grid.innerHTML);
+            
+            // 更新统计信息
+            const visibleCountElement = document.getElementById('visibleCount');
+            console.log('visibleCountElement:', visibleCountElement);
+            if (visibleCountElement) {
+                visibleCountElement.textContent = presets.length;
+                console.log('Updated visible count to:', presets.length);
+            } else {
+                console.error('visibleCount element not found!');
+            }
+            
+            if (!presets || !Array.isArray(presets) || presets.length === 0) {
+                console.error('Invalid presets array:', presets);
+                // 显示空状态提示
+                grid.innerHTML = `
+                    <div style="background: #ffd93d; color: #333; padding: 20px; border-radius: 8px; margin: 10px; text-align: center;">
+                        <h3>没有预设项</h3>
+                        <p>预设数组为空或无效</p>
+                        <p>预设数量: ${presets ? presets.length : 'undefined'}</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            console.log('Starting to create preset items...');
+            
+            presets.forEach((preset, index) => {
+                console.log(`Creating preset ${index + 1}/${presets.length}:`, preset.name);
+                
+                try {
+                    const item = document.createElement('div');
+                    item.className = 'preset-item';
+                    item.style.cssText = 'background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; margin: 4px; cursor: pointer; transition: all 0.3s ease;';
+                    
+                    // 创建预览画布
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'preset-canvas';
+                    canvas.width = 80;
+                    canvas.height = 80;
+                    canvas.style.cssText = 'width: 60px; height: 60px; border: 1px solid #e2e8f0; border-radius: 4px; background: #1a202c; margin: 0 auto 4px;';
+                    
+                    // 绘制准星预览
+                    const ctx = canvas.getContext('2d');
+                    try {
+                        drawCrosshair(canvas, ctx, preset, 40, 40);
+                        console.log(`Successfully drew crosshair for ${preset.name}`);
+                    } catch (drawError) {
+                        console.error('Error drawing crosshair for', preset.name, ':', drawError);
+                        // 如果绘制失败，显示错误信息
+                        ctx.fillStyle = '#ff6b6b';
+                        ctx.font = '10px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.fillText('绘制错误', 40, 40);
+                    }
+                    
+                    // 创建信息容器
+                    const info = document.createElement('div');
+                    info.className = 'preset-info';
+                    info.style.cssText = 'text-align: center; font-size: 11px;';
+                    info.innerHTML = `
+                        <div style="font-weight: 600; color: #2d3748; margin-bottom: 2px;">${preset.name}</div>
+                        <div style="color: #718096; font-size: 10px;">
+                            <span>${getStyleName(preset.style)}</span> • 
+                            <span>${preset.size}px</span> • 
+                            <span>${Math.round(preset.opacity * 100)}%</span>
+                        </div>
+                    `;
+                    
+                    // 创建应用按钮
+                    const applyBtn = document.createElement('button');
+                    applyBtn.className = 'preset-apply-btn';
+                    applyBtn.textContent = '应用';
+                    applyBtn.style.cssText = 'width: 100%; padding: 4px 8px; background: #667eea; color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; margin-top: 4px;';
+                    applyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        console.log('Apply button clicked for:', preset.name);
+                        applyPreset(preset);
+                    };
+                    
+                    // 组装元素
+                    item.appendChild(canvas);
+                    item.appendChild(info);
+                    item.appendChild(applyBtn);
+                    
+                    // 悬停效果
+                    item.onmouseover = () => {
+                        item.style.borderColor = '#667eea';
+                        item.style.transform = 'translateY(-2px)';
+                        item.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.15)';
+                    };
+                    
+                    item.onmouseout = () => {
+                        item.style.borderColor = '#e2e8f0';
+                        item.style.transform = 'translateY(0)';
+                        item.style.boxShadow = 'none';
+                    };
+                    
+                    // 点击事件
+                    item.onclick = (e) => {
+                        if (e.target !== applyBtn) {
+                            console.log('Preset item clicked:', preset.name);
+                            // 移除其他选中状态
+                            document.querySelectorAll('.preset-item').forEach(el => {
+                                el.style.borderColor = '#e2e8f0';
+                            });
+                            // 添加选中状态
+                            item.style.borderColor = '#667eea';
+                            // 应用预设
+                            applyPreset(preset);
+                        }
+                    };
+                    
+                    grid.appendChild(item);
+                    console.log(`Successfully added item ${index + 1} to grid. Grid now has ${grid.children.length} children`);
+                    
+                } catch (itemError) {
+                    console.error(`Error creating item ${index}:`, itemError);
+                    // 添加错误项到grid
+                    const errorItem = document.createElement('div');
+                    errorItem.style.cssText = 'background: #ff6b6b; color: white; padding: 10px; margin: 5px; border-radius: 8px;';
+                    errorItem.innerHTML = `<h4>创建预设项 ${index} 时出错</h4><p>${itemError.message}</p>`;
+                    grid.appendChild(errorItem);
+                }
+            });
+            
+            console.log('=== renderPresetGrid END ===');
+            console.log('Final grid children count:', grid.children.length);
+            console.log('Final grid innerHTML length:', grid.innerHTML.length);
+        }
+        
+        // 应用预设
+        function applyPreset(preset) {
+            currentConfig.style = preset.style;
+            currentConfig.color = preset.color;
+            currentConfig.size = preset.size;
+            currentConfig.thickness = preset.thickness;
+            currentConfig.gap = preset.gap;
+            currentConfig.opacity = preset.opacity;
+            currentConfig.name = preset.name; // 添加预设名称
+            
+            updateControls();
+            updateConfig();
+            
+            // 更新应用计数
+            const appliedCountElement = document.getElementById('appliedCount');
+            let appliedCount = parseInt(appliedCountElement.textContent) || 0;
+            appliedCountElement.textContent = appliedCount + 1;
+            
+            // 显示成功提示
+            showSuccessMessage(`已应用预设: ${preset.name}`);
+        }
+        
+        // 筛选预设
+        function filterPresets() {
+            const categoryFilter = controls.categoryFilter.value;
+            const styleFilter = controls.styleFilter.value;
+            
+            let filteredPresets = presetCrosshairs;
+            
+            // 按分类筛选
+            if (categoryFilter !== 'all') {
+                filteredPresets = filteredPresets.filter(preset => preset.category === categoryFilter);
+            }
+            
+            // 按样式筛选
+            if (styleFilter !== 'all') {
+                filteredPresets = filteredPresets.filter(preset => preset.style === styleFilter);
+            }
+            
+            renderPresetGrid(filteredPresets);
+        }
+        
+        // 显示成功消息
+        function showSuccessMessage(message) {
+            const successMessage = document.createElement('div');
+            successMessage.textContent = message;
+            successMessage.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #38a169;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            
+            document.body.appendChild(successMessage);
+            
+            setTimeout(() => {
+                successMessage.style.animation = 'slideOut 0.3s ease-out';
+                setTimeout(() => {
+                    if (document.body.contains(successMessage)) {
+                        document.body.removeChild(successMessage);
+                    }
+                }, 300);
+            }, 2000);
+        }
+        
+        // 获取样式名称
+        function getStyleName(style) {
+            const styleNames = {
+                'cross': '十字准星',
+                'dot': '圆点准星',
+                't-shape': 'T型准星',
+                'circle': '圆圈准星',
+                'custom': '自定义准星'
+            };
+            return styleNames[style] || style;
+        }
+        
+        // 设置覆盖层画布
+        function setupOverlayCanvas() {
+            overlayCanvas.width = window.innerWidth;
+            overlayCanvas.height = window.innerHeight;
+            
+            window.addEventListener('resize', () => {
+                overlayCanvas.width = window.innerWidth;
+                overlayCanvas.height = window.innerHeight;
+                if (overlayActive) {
+                    drawCrosshair(overlayCanvas, overlayCtx, currentConfig, 
+                        window.innerWidth * currentConfig.x, 
+                        window.innerHeight * currentConfig.y);
+                }
+            });
+        }
+        
+        // 绘制准星
+        function drawCrosshair(canvas, context, config, centerX, centerY) {
+            // 清除画布
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 设置深色背景（用于预览）
+            if (canvas.width <= 80) { // 如果是预览画布
+                context.fillStyle = '#1a202c';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            
+            // 检查是否可见
+            if (config && config.visible === false) return;
+            
+            context.globalAlpha = config.opacity;
+            context.strokeStyle = config.color;
+            context.fillStyle = config.color;
+            context.lineWidth = config.thickness;
+            context.lineCap = 'round';
+            
+            switch (config.style) {
+                case 'cross':
+                    drawCross(centerX, centerY, context, config);
+                    break;
+                case 'dot':
+                    drawDot(centerX, centerY, context, config);
+                    break;
+                case 't-shape':
+                    drawTShape(centerX, centerY, context, config);
+                    break;
+                case 'circle':
+                    drawCircle(centerX, centerY, context, config);
+                    break;
+                case 'custom':
+                    drawCustom(centerX, centerY, context, config);
+                    break;
+            }
+        }
+        
+        // 绘制函数
+        function drawCross(x, y, context, config) {
+            const halfSize = config.size / 2;
+            const gap = config.gap;
+            
+            context.beginPath();
+            context.moveTo(x - halfSize, y);
+            context.lineTo(x - gap, y);
+            context.moveTo(x + gap, y);
+            context.lineTo(x + halfSize, y);
+            context.moveTo(x, y - halfSize);
+            context.lineTo(x, y - gap);
+            context.moveTo(x, y + gap);
+            context.lineTo(x, y + halfSize);
+            context.stroke();
+        }
+        
+        function drawDot(x, y, context, config) {
+            context.beginPath();
+            context.arc(x, y, config.size / 2, 0, Math.PI * 2);
+            context.fill();
+        }
+        
+        function drawTShape(x, y, context, config) {
+            const halfSize = config.size / 2;
+            
+            context.beginPath();
+            context.moveTo(x - halfSize, y);
+            context.lineTo(x + halfSize, y);
+            context.moveTo(x, y);
+            context.lineTo(x, y + halfSize);
+            context.stroke();
+        }
+        
+        function drawCircle(x, y, context, config) {
+            context.beginPath();
+            context.arc(x, y, config.size / 2, 0, Math.PI * 2);
+            context.stroke();
+        }
+        
+        function drawCustom(x, y, context, config) {
+            const size = config.size;
+            const thickness = config.thickness;
+            
+            // 扩展的自定义形状绘制
+            // 这里可以根据不同的预设名称绘制不同的创意形状
+            // 为了简化，我们使用一个基础的十字加中心点
+            
+            const halfSize = size / 2;
+            const gap = config.gap;
+            
+            context.beginPath();
+            context.moveTo(x - halfSize, y);
+            context.lineTo(x - gap, y);
+            context.moveTo(x + gap, y);
+            context.lineTo(x + halfSize, y);
+            context.moveTo(x, y - halfSize);
+            context.lineTo(x, y - gap);
+            context.moveTo(x, y + gap);
+            context.lineTo(x, y + halfSize);
+            context.stroke();
+            
+            // 中心点
+            context.beginPath();
+            context.arc(x, y, 2, 0, Math.PI * 2);
+            context.fill();
+        }
+        
+        // 更新控件值
+        function updateControls() {
+            controls.style.value = currentConfig.style;
+            controls.color.value = currentConfig.color;
+            controls.size.value = currentConfig.size;
+            controls.thickness.value = currentConfig.thickness;
+            controls.gap.value = currentConfig.gap;
+            controls.opacity.value = currentConfig.opacity * 100;
+            controls.posX.value = currentConfig.x * 100;
+            controls.posY.value = currentConfig.y * 100;
+        }
+        
+        // 更新配置对象
+        function updateConfig() {
+            currentConfig.style = controls.style.value;
+            currentConfig.color = controls.color.value;
+            currentConfig.size = parseInt(controls.size.value);
+            currentConfig.thickness = parseInt(controls.thickness.value);
+            currentConfig.gap = parseInt(controls.gap.value);
+            currentConfig.opacity = parseInt(controls.opacity.value) / 100;
+            currentConfig.x = parseInt(controls.posX.value) / 100;
+            currentConfig.y = parseInt(controls.posY.value) / 100;
+            
+            // 更新预览
+            drawCrosshair(previewCanvas, ctx, currentConfig, previewCanvas.width / 2, previewCanvas.height / 2);
+            
+            // 同步配置到覆盖窗口
+            syncConfigToOverlay();
+            
+            // 保存配置
+            saveConfig();
+        }
+        
+        // 配置管理
+        function saveConfig() {
+            if (isElectron && window.electronAPI) {
+                // 在Electron环境中使用IPC
+                window.electronAPI.saveConfig(currentConfig);
+            } else {
+                // 在浏览器环境中使用localStorage
+                localStorage.setItem('crosshair-config', JSON.stringify(currentConfig));
+            }
+        }
+        
+        function loadConfig() {
+            if (isElectron && window.electronAPI) {
+                // 在Electron环境中使用IPC
+                window.electronAPI.getConfig().then(config => {
+                    if (config) {
+                        currentConfig = { ...currentConfig, ...config };
+                        updateControls();
+                        drawCrosshair(previewCanvas, ctx, currentConfig, previewCanvas.width / 2, previewCanvas.height / 2);
+                        updateStatus();
+                    }
+                });
+            } else {
+                // 在浏览器环境中使用localStorage
+                const saved = localStorage.getItem('crosshair-config');
+                if (saved) {
+                    currentConfig = { ...currentConfig, ...JSON.parse(saved) };
+                }
+            }
+        }
+        
+        function savePreset() {
+            const name = controls.presetName.value.trim();
+            if (!name) {
+                alert('请输入配置名称');
+                return;
+            }
+            
+            presets[name] = { ...currentConfig };
+            localStorage.setItem('crosshair-presets', JSON.stringify(presets));
+            controls.presetName.value = '';
+            loadPresets();
+        }
+        
+        function loadPresets() {
+            const saved = localStorage.getItem('crosshair-presets');
+            if (saved) {
+                presets = JSON.parse(saved);
+            }
+            
+            controls.presetList.innerHTML = '';
+            Object.keys(presets).forEach(name => {
+                const item = document.createElement('div');
+                item.className = 'preset-item';
+                item.innerHTML = `
+                    <span>${name}</span>
+                    <div>
+                        <button onclick="loadPreset('${name}')">加载</button>
+                        <button onclick="deletePreset('${name}')" class="danger">删除</button>
+                    </div>
+                `;
+                controls.presetList.appendChild(item);
+            });
+        }
+        
+        function loadPreset(name) {
+            if (presets[name]) {
+                currentConfig = { ...currentConfig, ...presets[name] };
+                updateControls();
+                updateConfig();
+            }
+        }
+        
+        function deletePreset(name) {
+            if (confirm(`确定要删除配置 "${name}" 吗？`)) {
+                delete presets[name];
+                localStorage.setItem('crosshair-presets', JSON.stringify(presets));
+                loadPresets();
+            }
+        }
+        
+        // 操作函数
+        function setOpacity(value) {
+            currentConfig.opacity = value / 100;
+            controls.opacity.value = value;
+            document.getElementById('opacityValue').textContent = value + '%';
+            updateConfig();
+        }
+        
+        function setSize(value) {
+            currentConfig.size = value;
+            controls.size.value = value;
+            document.getElementById('sizeValue').textContent = value;
+            updateConfig();
+        }
+        
+        function setPosition(x, y) {
+            currentConfig.x = x / 100;
+            currentConfig.y = y / 100;
+            controls.posX.value = x;
+            controls.posY.value = y;
+            document.getElementById('posXValue').textContent = x + '%';
+            document.getElementById('posYValue').textContent = y + '%';
+            updateConfig();
+        }
+        
+        function adjustPosition(axis, direction) {
+            const currentValue = axis === 'x' ? currentConfig.x : currentConfig.y;
+            const newValue = Math.max(0.1, Math.min(0.9, currentValue + (direction * 0.01)));
+            
+            if (axis === 'x') {
+                currentConfig.x = newValue;
+                controls.posX.value = Math.round(newValue * 100);
+                document.getElementById('posXValue').textContent = Math.round(newValue * 100) + '%';
+            } else {
+                currentConfig.y = newValue;
+                controls.posY.value = Math.round(newValue * 100);
+                document.getElementById('posYValue').textContent = Math.round(newValue * 100) + '%';
+            }
+            
+            updateConfig();
+        }
+        
+        function centerCrosshair() {
+            currentConfig.x = 0.5;
+            currentConfig.y = 0.5;
+            updateControls();
+            updateConfig();
+        }
+        
+        function toggleCrosshair() {
+            currentConfig.visible = !currentConfig.visible;
+            
+            if (isElectron && window.electronAPI) {
+                // 在Electron环境中直接通知覆盖窗口
+                window.electronAPI.setCrosshairVisible(currentConfig.visible);
+            }
+            
+            updateConfig();
+            updateStatus();
+        }
+        
+        function toggleOverlay() {
+            if (isElectron && window.electronAPI) {
+                // 在Electron环境中使用IPC控制覆盖窗口
+                window.electronAPI.toggleOverlay();
+            } else {
+                // 在浏览器环境中使用DOM覆盖
+                overlayActive = !overlayActive;
+                overlayMode.classList.toggle('active', overlayActive);
+                
+                if (overlayActive) {
+                    overlayCanvas.style.position = 'fixed';
+                    overlayCanvas.style.top = '0';
+                    overlayCanvas.style.left = '0';
+                    overlayCanvas.style.pointerEvents = 'none';
+                    overlayCanvas.style.zIndex = '9999';
+                    
+                    drawCrosshair(overlayCanvas, overlayCtx, currentConfig, 
+                        window.innerWidth * currentConfig.x, 
+                        window.innerHeight * currentConfig.y);
+                    
+                    // 隐藏侧边栏
+                    document.querySelector('.sidebar').style.display = 'none';
+                    
+                    // 全屏显示
+                    if (document.documentElement.requestFullscreen) {
+                        document.documentElement.requestFullscreen();
+                    } else if (document.documentElement.webkitRequestFullscreen) {
+                        document.documentElement.webkitRequestFullscreen();
+                    } else if (document.documentElement.msRequestFullscreen) {
+                        document.documentElement.msRequestFullscreen();
+                    }
+                    
+                    isFullscreen = true;
+                } else {
+                    // 退出全屏
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    
+                    isFullscreen = false;
+                }
+            }
+        }
+        
+        function updateStatus() {
+        }
+        
+        function resetToDefault() {
+            if (confirm('确定要重置为默认配置吗？')) {
+                currentConfig = {
+                    style: 'cross',
+                    color: '#00ff00',
+                    size: 20,
+                    thickness: 2,
+                    opacity: 0.8,
+                    x: 0.5,
+                    y: 0.5,
+                    gap: 5,
+                    visible: true
+                };
+                updateControls();
+                updateConfig();
+            }
+        }
+        
+        function exportConfig() {
+            const dataStr = JSON.stringify(currentConfig, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = 'crosshair-config.json';
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+        
+        function requestFullscreen() {
+            if (!isFullscreen) {
+                document.documentElement.requestFullscreen();
+                isFullscreen = true;
+            } else {
+                document.exitFullscreen();
+                isFullscreen = false;
+            }
+            updateStatus();
+        }
+        
+        function minimizeWindow() {
+            // 在 Web 环境中无法最小化窗口
+            alert('Web 版本不支持最小化窗口功能');
+        }
+        
+        function maximizeWindow() {
+            if (!isFullscreen) {
+                requestFullscreen();
+            }
+        }
+        
+        function closeWindow() {
+            if (confirm('确定要关闭应用吗？')) {
+                window.close();
+            }
+        }
+        
+        function updateStatus() {
+            document.getElementById('visibilityStatus').textContent = currentConfig.visible ? '显示' : '隐藏';
+            document.getElementById('overlayStatus').textContent = overlayActive ? '开启' : '关闭';
+            document.getElementById('windowStatus').textContent = isFullscreen ? '全屏' : '窗口';
+            document.getElementById('modeText').textContent = overlayActive ? '覆盖模式' : '窗口模式';
+        }
+        
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F6') {
+                e.preventDefault();
+                toggleCrosshair();
+            } else if (e.key === 'F7') {
+                e.preventDefault();
+                toggleOverlay();
+            } else if (e.key === 'Escape' && overlayActive) {
+                toggleOverlay();
+            }
+        });
+        
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded fired');
+            
+            // 确保sidebar可见
+            const sidebar = document.querySelector('.sidebar');
+            if (sidebar) {
+                sidebar.style.display = 'block';
+                console.log('Sidebar forced to visible');
+            }
+            
+            // 直接初始化完整功能
+            init();
+        });
+        
+        // 显示欢迎信息
+        console.log('🎯 屏幕准星助手已启动');
+        console.log('📋 快捷键: F6 - 显示/隐藏准星, F7 - 切换覆盖模式, ESC - 退出覆盖模式');
+    </script>
+</body>
+</html>

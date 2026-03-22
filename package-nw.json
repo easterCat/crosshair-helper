@@ -1,0 +1,18 @@
+{
+  "name": "crosshair-helper",
+  "version": "1.0.0",
+  "description": "FPS游戏屏幕准星助手",
+  "main": "index.html",
+  "window": {
+    "title": "屏幕准星助手",
+    "width": 1366,
+    "height": 768,
+    "position": "center",
+    "min_width": 600,
+    "min_height": 400,
+    "icon": "assets/icon.png"
+  },
+  "webkit": {
+    "plugin": true
+  }
+}
