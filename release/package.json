@@ -1,0 +1,61 @@
+{
+  "name": "crosshair-helper",
+  "version": "1.0.0",
+  "description": "FPS游戏屏幕准星助手 - 为FPS游戏玩家提供可自定义的屏幕准星覆盖层",
+  "main": "main-fixed.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win --publish=never",
+    "build-portable": "electron-builder --win portable --publish=never",
+    "build-linux": "electron-builder --linux",
+    "build-mac": "electron-builder --mac",
+    "dev": "electron . --dev"
+  },
+  "keywords": [
+    "fps",
+    "crosshair",
+    "gaming",
+    "overlay",
+    "electron"
+  ],
+  "author": "Crosshair Helper Team",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^22.3.27",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.crosshair.helper",
+    "productName": "屏幕准星助手",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "!dist/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "sign": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "linux": {
+      "target": "AppImage",
+      "category": "Game"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.games"
+    }
+  },
+  "dependencies": {
+    "electron-store": "^8.1.0"
+  }
+}

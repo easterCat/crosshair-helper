@@ -4,14 +4,18 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Build outputs
-dist/
+# Large executable files (GitHub has 100MB limit)
+*.exe
+dist/win-unpacked/*.exe
+release/*.exe
+
+# Build outputs (excluding dist and release which we want to include)
 build/
 out/
 
-# Electron
-release/
+# Electron (excluding release/ which we want to include, but still excluding node_modules within it)
 app/
+release/node_modules/
 
 # IDE
 .vscode/

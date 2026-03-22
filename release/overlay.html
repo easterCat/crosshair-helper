@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>准星覆盖层</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: transparent;
+            -webkit-app-region: no-drag;
+        }
+        
+        #crosshairCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: move;
+        }
+        
+        #crosshairCanvas.dragging {
+            cursor: grabbing;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="crosshairCanvas"></canvas>
+    
+    <script>
+        // 检测是否在Electron环境中
+        const isElectron = !!(window.electronAPI);
+        
+        const canvas = document.getElementById('crosshairCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let config = {
+            style: 'cross',
+            color: '#00ff00',
+            size: 20,
+            thickness: 2,
+            opacity: 0.8,
+            x: 0.5,
+            y: 0.5,
+            gap: 5,
+            visible: true
+        };
+        
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        
+        // 设置画布大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            drawCrosshair();
+        }
+        
+        // 绘制准星
+        function drawCrosshair() {
+            // 清除画布
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // 检查是否可见
+            if (config && config.visible === false) return;
+            
+            ctx.globalAlpha = config.opacity;
+            ctx.strokeStyle = config.color;
+            ctx.fillStyle = config.color;
+            ctx.lineWidth = config.thickness;
+            ctx.lineCap = 'round';
+            
+            const centerX = canvas.width * config.x;
+            const centerY = canvas.height * config.y;
+            
+            switch (config.style) {
+                case 'cross':
+                    drawCross(centerX, centerY, ctx, config);
+                    break;
+                case 'dot':
+                    drawDot(centerX, centerY, ctx, config);
+                    break;
+                case 't-shape':
+                    drawTShape(centerX, centerY, ctx, config);
+                    break;
+                case 'circle':
+                    drawCircle(centerX, centerY, ctx, config);
+                    break;
+                case 'custom':
+                    drawCustom(centerX, centerY, ctx, config);
+                    break;
+            }
+        }
+        
+        // 绘制函数
+        function drawCross(x, y, context, config) {
+            const halfSize = config.size / 2;
+            const gap = config.gap;
+            
+            context.beginPath();
+            context.moveTo(x - halfSize, y);
+            context.lineTo(x - gap, y);
+            context.moveTo(x + gap, y);
+            context.lineTo(x + halfSize, y);
+            context.moveTo(x, y - halfSize);
+            context.lineTo(x, y - gap);
+            context.moveTo(x, y + gap);
+            context.lineTo(x, y + halfSize);
+            context.stroke();
+        }
+        
+        function drawDot(x, y, context, config) {
+            context.beginPath();
+            context.arc(x, y, config.size / 2, 0, Math.PI * 2);
+            context.fill();
+        }
+        
+        function drawTShape(x, y, context, config) {
+            const halfSize = config.size / 2;
+            
+            context.beginPath();
+            context.moveTo(x - halfSize, y);
+            context.lineTo(x + halfSize, y);
+            context.moveTo(x, y);
+            context.lineTo(x, y + halfSize);
+            context.stroke();
+        }
+        
+        function drawCircle(x, y, context, config) {
+            context.beginPath();
+            context.arc(x, y, config.size / 2, 0, Math.PI * 2);
+            context.stroke();
+        }
+        
+        function drawCustom(x, y, context, config) {
+            const size = config.size;
+            const thickness = config.thickness;
+            const gap = config.gap;
+            
+            // 绘制一个更复杂的十字准星
+            context.beginPath();
+            // 外十字
+            context.moveTo(x - size/2, y);
+            context.lineTo(x - gap, y);
+            context.moveTo(x + gap, y);
+            context.lineTo(x + size/2, y);
+            context.moveTo(x, y - size/2);
+            context.lineTo(x, y - gap);
+            context.moveTo(x, y + gap);
+            context.lineTo(x, y + size/2);
+            
+            // 内十字（更细）
+            context.lineWidth = thickness / 2;
+            context.moveTo(x - size/4, y);
+            context.lineTo(x + size/4, y);
+            context.moveTo(x, y - size/4);
+            context.lineTo(x, y + size/4);
+            
+            context.stroke();
+            
+            // 中心点
+            context.beginPath();
+            context.arc(x, y, thickness, 0, Math.PI * 2);
+            context.fill();
+        }
+        
+        // 鼠标事件处理
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            const centerX = canvas.width * config.x;
+            const centerY = canvas.height * config.y;
+            
+            // 检查是否点击在准星附近
+            const distance = Math.sqrt(Math.pow(mouseX - centerX, 2) + Math.pow(mouseY - centerY, 2));
+            
+            if (distance <= config.size) {
+                isDragging = true;
+                dragOffset.x = mouseX - centerX;
+                dragOffset.y = mouseY - centerY;
+                canvas.classList.add('dragging');
+                canvas.style.cursor = 'grabbing';
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                config.x = (mouseX - dragOffset.x) / canvas.width;
+                config.y = (mouseY - dragOffset.y) / canvas.height;
+                
+                // 限制在屏幕范围内
+                config.x = Math.max(0.1, Math.min(0.9, config.x));
+                config.y = Math.max(0.1, Math.min(0.9, config.y));
+                
+                drawCrosshair();
+            }
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            if (isDragging) {
+                isDragging = false;
+                canvas.classList.remove('dragging');
+                canvas.style.cursor = 'move';
+                
+                // 通知主进程更新配置
+                ipcRenderer.invoke('save-config', config);
+            }
+        });
+        
+        // 防止右键菜单
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // IPC 事件监听
+        if (window.electronAPI) {
+            // 监听配置更新
+            window.electronAPI.getConfig().then(initialConfig => {
+                config = { ...config, ...initialConfig };
+                resizeCanvas();
+            }).catch(err => {
+                console.error('获取配置失败:', err);
+            });
+            
+            // 使用preload脚本暴露的IPC监听器
+            window.electronAPI.onConfigUpdated((event, newConfig) => {
+                config = { ...config, ...newConfig };
+                drawCrosshair();
+            });
+            
+            window.electronAPI.onUpdateConfig((event, newConfig) => {
+                config = { ...config, ...newConfig };
+                resizeCanvas();
+                drawCrosshair();
+            });
+            
+            window.electronAPI.onToggleCrosshair((event, visible) => {
+                config.visible = visible;
+                drawCrosshair();
+            });
+        }
+        
+        // 初始化
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
